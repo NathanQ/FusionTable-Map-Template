@@ -14,21 +14,21 @@
         // Found at https://console.developers.google.com/
         // Important! this key is for demonstration purposes. please register your own.
         this.googleApiKey = options.googleApiKey || "",
-        
+
         // name of the location column in your Fusion Table.
         // NOTE: if your location column name has spaces in it, surround it with single quotes
         // example: locationColumn:     "'my location'",
         this.locationColumn = options.locationColumn || "geometry";
-        
+
         // appends to all address searches if not present
         this.locationScope = options.locationScope || "";
 
         // zoom level when map is loaded (bigger is more zoomed in)
-        this.defaultZoom = options.defaultZoom || 11; 
+        this.defaultZoom = options.defaultZoom || 11;
 
         // center that your map defaults to
-        this.map_centroid = new google.maps.LatLng(options.map_center[0], options.map_center[1]);
-        
+        this.map_centroid = new google.maps.LatLng(longitude, latitude);
+
         // marker image for your searched address
         if (typeof options.addrMarkerImage !== 'undefined') {
             if (options.addrMarkerImage != "")
@@ -41,7 +41,7 @@
 
     	this.currentPinpoint = null;
     	$("#result_count").html("");
-        
+
         this.myOptions = {
             zoom: this.defaultZoom,
             center: this.map_centroid,
@@ -49,11 +49,11 @@
         };
         this.geocoder = new google.maps.Geocoder();
         this.map = new google.maps.Map($("#map_canvas")[0], this.myOptions);
-        
+
         // maintains map centerpoint for responsive design
-        google.maps.event.addDomListener(self.map, 'idle', function () {
-            self.calculateCenter();
-        });
+        // google.maps.event.addDomListener(self.map, 'idle', function () {
+        //     self.calculateCenter();
+        // });
         google.maps.event.addDomListener(window, 'resize', function () {
             self.map.setCenter(self.map_centroid);
         });
@@ -62,11 +62,11 @@
         //reset filters
         $("#search_address").val(self.convertToPlainString($.address.parameter('address')));
         var loadRadius = self.convertToPlainString($.address.parameter('radius'));
-        if (loadRadius != "") 
+        if (loadRadius != "")
             $("#search_radius").val(loadRadius);
-        else 
+        else
             $("#search_radius").val(self.searchRadius);
-        
+
         $(":checkbox").prop("checked", "checked");
         $("#result_box").hide();
 
@@ -144,6 +144,10 @@
                     }
                     var geoCondition = " AND ST_INTERSECTS(" + self.locationColumn + ", CIRCLE(LATLNG" + self.currentPinpoint.toString() + "," + self.searchRadius + "))";
                     callback(geoCondition);
+
+                    longitude = self.currentPinpoint.toString().split(" ")[0].slice(1, -1);
+                    latitude = self.currentPinpoint.toString().split(" ")[1].slice(0, -1);
+
                     self.drawSearchRadiusCircle(self.currentPinpoint);
                 } else {
                     alert("We could not find your address: " + status);
@@ -161,7 +165,7 @@
         var address = $("#search_address").val();
         self.searchRadius = $("#search_radius").val();
         self.whereClause = self.locationColumn + " not equal to ''";
-        
+
         //-----custom filters-----
         //-----end of custom filters-----
 
@@ -284,7 +288,7 @@
 
     MapsLib.prototype.displaySearchCount = function (json) {
         var self = this;
-        
+
         var numRows = 0;
         if (json["rows"] != null) {
             numRows = json["rows"][0];
@@ -312,10 +316,10 @@
     };
 
     // maintains map centerpoint for responsive design
-    MapsLib.prototype.calculateCenter = function () {
-        var self = this;
-        center = self.map.getCenter();
-    };
+    // MapsLib.prototype.calculateCenter = function () {
+    //     var self = this;
+    //     center = self.map.getCenter();
+    // };
 
     //converts a slug or query string in to readable text
     MapsLib.prototype.convertToPlainString = function (text) {
@@ -325,11 +329,11 @@
 
     MapsLib.prototype.clearSearch = function () {
         var self = this;
-        if (self.searchrecords && self.searchrecords.getMap) 
+        if (self.searchrecords && self.searchrecords.getMap)
             self.searchrecords.setMap(null);
-        if (self.addrMarker && self.addrMarker.getMap) 
+        if (self.addrMarker && self.addrMarker.getMap)
             self.addrMarker.setMap(null);
-        if (self.searchRadiusCircle && self.searchRadiusCircle.getMap) 
+        if (self.searchRadiusCircle && self.searchRadiusCircle.getMap)
             self.searchRadiusCircle.setMap(null);
     };
 
@@ -338,8 +342,8 @@
         var foundLocation;
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function (position) {
-                var latitude = position.coords.latitude;
-                var longitude = position.coords.longitude;
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
                 var accuracy = position.coords.accuracy;
                 var coords = new google.maps.LatLng(latitude, longitude);
                 self.map.panTo(coords);
